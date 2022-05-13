@@ -1,84 +1,243 @@
 import type { NextPage } from 'next'
 import Head from 'next/head'
 import Image from 'next/image'
+import React, { useEffect, useState } from 'react';
+import { getContracts, getWeb3 } from '../utils';
+import Web3 from 'web3'
+import Wallet from '../Components/Wallet';
+import NewOrder from '../Components/NewOrder';
+import AllTrades from '../Components/AllTrades';
+import AllOrders from '../Components/AllOrders';
+import MyOrders from '../Components/MyOrders';
+import NavBar from '../Components/Navbar';
 
 const Home: NextPage = () => {
+
+  const SIDE = {
+    BUY: 0,
+    SELL: 1
+  };
+
+  const [activeMenuItem, setActiveMenuItem] = useState('')
+  const [canReqContracts, setCanReqContracts] = useState(false);
+  const [web3, setWeb3] = useState(undefined);
+  const [accounts, setAccounts] = useState([]);
+  const [contracts, setContracts] = useState(undefined);
+  const [tokens, setTokens] = useState([]);
+  const [user, setUser] = useState({
+    accounts: [],
+    balances: {
+      tokenDex: 0,
+      tokenWallet: 0
+    },
+    selectedToken: undefined
+  });
+  const [orders, setOrders] = useState({
+    buy: [],
+    sell: []
+  });
+  const [trades, setTrades] = useState([]);
+  const [listener, setListener] = useState(undefined);
+
+  useEffect(() => {
+    const init = async () => {
+      const web3 = await getWeb3();
+      const contracts = await getContracts(web3);
+      const accounts = await web3.eth.getAccounts();
+      setWeb3(web3);
+      setContracts(contracts);
+      setAccounts(accounts);
+      setCanReqContracts(true)
+    }
+    init();
+  // eslint-disable-next-line
+  }, []);
+
+  const getBalances = async (account, token) => {
+    const tokenDex = await contracts.dex.methods
+      .traderBalances(account, web3.utils.fromAscii(token.ticker))
+      .call();
+    const tokenWallet = await contracts[token.ticker].methods
+      .balanceOf(account)
+      .call();
+    return {tokenDex, tokenWallet};
+  }
+
+  const getOrders = async token => {
+    const orders = await Promise.all([
+      contracts.dex.methods
+        .getOrders(web3.utils.fromAscii(token.ticker), SIDE.BUY)
+        .call(),
+      contracts.dex.methods
+        .getOrders(web3.utils.fromAscii(token.ticker), SIDE.SELL)
+        .call(),
+    ]);
+    return {buy: orders[0], sell: orders[1]};
+  }
+
+  const listenToTrades = token => {
+    const tradeIds = new Set();
+    setTrades([]);
+    const listener = contracts.dex.events.NewTrade(
+      {
+        filter: {ticker: web3.utils.fromAscii(token.ticker)},
+        fromBlock: 0
+      })
+      .on('data', newTrade => {
+        if(tradeIds.has(newTrade.returnValues.tradeId)) return;
+        tradeIds.add(newTrade.returnValues.tradeId);
+        setTrades(trades => ([...trades, newTrade.returnValues]));
+      });
+    setListener(listener);
+  }
+
+  const selectToken = token => {
+    setUser({...user, selectedToken: token});
+  }
+
+  const deposit = async amount => {
+    console.log(`making deposit on ${user.selectedToken}`)
+    await contracts[user.selectedToken.ticker].methods
+      .approve(contracts.dex.options.address, amount)
+      .send({from: user.accounts[0]});
+    await contracts.dex.methods
+      .deposit(amount, web3.utils.fromAscii(user.selectedToken.ticker))
+      .send({from: user.accounts[0]});
+    const balances = await getBalances(
+      user.accounts[0],
+      user.selectedToken
+    );
+    setUser(user => ({ ...user, balances}));
+  }
+
+  const withdraw = async amount => {
+    await contracts.dex.methods
+      .withdraw(
+        amount, 
+        web3.utils.fromAscii(user.selectedToken.ticker)
+      )
+      .send({from: user.accounts[0]});
+    const balances = await getBalances(
+      user.accounts[0],
+      user.selectedToken
+    );
+    setUser(user => ({ ...user, balances}));
+  }
+
+  const createMarketOrder = async (amount, side) => {
+    console.log(user.accounts[0])
+    await contracts.dex.methods
+    .createMarketOrder(
+        web3.utils.fromAscii(user.selectedToken.ticker),
+        amount,
+        side
+      )
+      .send({from: user.accounts[0]});
+    const orders = await getOrders(user.selectedToken);
+    setOrders(orders);
+  }
+
+  const createLimitOrder = async (amount, price, side) => {
+    console.log(user.accounts[0])
+    await contracts.dex.methods
+    .createLimitOrder(
+        web3.utils.fromAscii(user.selectedToken.ticker),
+        amount,
+        price,
+        side
+      ).send({from: user.accounts[0]});
+      const orders = await getOrders(user.selectedToken);
+      setOrders(orders);
+      console.log(orders)
+  }
+
+
+  useEffect(() => {
+    if (canReqContracts) {
+      const init = async () => {
+        console.log(contracts)
+        const rawTokens = await contracts.dex.methods.getTokens().call(); 
+        const tokens = rawTokens.map(token => ({
+          ...token,
+          ticker: web3.utils.hexToUtf8(token.ticker)
+        }));
+        const [balances, orders] = await Promise.all([
+          getBalances(accounts[0], tokens[0]),
+          getOrders(tokens[0]),
+        ]);
+        setTokens(tokens);
+        setUser({accounts, balances, selectedToken: tokens[0]});
+        setOrders(orders);
+        setActiveMenuItem(tokens[0].ticker)
+        console.log('was able to req contracts')
+        console.log(tokens)
+        console.log(orders)
+      }
+      init();
+    }
+    console.log('init wasnt ready')
+  }, [canReqContracts]);
+
+  useEffect(() => {
+    const init = async () => {
+      const [balances, orders] = await Promise.all([
+        getBalances(
+          user.accounts[0], 
+          user.selectedToken
+        ),
+        getOrders(user.selectedToken),
+      ]);
+      listenToTrades(user.selectedToken);
+      setUser(user => ({ ...user, balances}));
+      setOrders(orders);
+      console.log(orders)
+    }
+    if(typeof user.selectedToken !== 'undefined') {
+      init();
+    }
+  }, [user.selectedToken], () => {
+    listener.unsubscribe();
+  });  
+
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center py-2">
+    <div className="flex bg-black min-h-screen flex-col justify-center ">
       <Head>
-        <title>Create Next App</title>
+        <title>DEX</title>
         <link rel="icon" href="/favicon.ico" />
       </Head>
-
-      <main className="flex w-full flex-1 flex-col items-center justify-center px-20 text-center">
-        <h1 className="text-6xl font-bold">
-          Welcome to{' '}
-          <a className="text-blue-600" href="https://nextjs.org">
-            Next.js!
-          </a>
-        </h1>
-
-        <p className="mt-3 text-2xl">
-          Get started by editing{' '}
-          <code className="rounded-md bg-gray-100 p-3 font-mono text-lg">
-            pages/index.tsx
-          </code>
-        </p>
-
-        <div className="mt-6 flex max-w-4xl flex-wrap items-center justify-around sm:w-full">
-          <a
-            href="https://nextjs.org/docs"
-            className="mt-6 w-96 rounded-xl border p-6 text-left hover:text-blue-600 focus:text-blue-600"
-          >
-            <h3 className="text-2xl font-bold">Documentation &rarr;</h3>
-            <p className="mt-4 text-xl">
-              Find in-depth information about Next.js features and its API.
-            </p>
-          </a>
-
-          <a
-            href="https://nextjs.org/learn"
-            className="mt-6 w-96 rounded-xl border p-6 text-left hover:text-blue-600 focus:text-blue-600"
-          >
-            <h3 className="text-2xl font-bold">Learn &rarr;</h3>
-            <p className="mt-4 text-xl">
-              Learn about Next.js in an interactive course with quizzes!
-            </p>
-          </a>
-
-          <a
-            href="https://github.com/vercel/next.js/tree/canary/examples"
-            className="mt-6 w-96 rounded-xl border p-6 text-left hover:text-blue-600 focus:text-blue-600"
-          >
-            <h3 className="text-2xl font-bold">Examples &rarr;</h3>
-            <p className="mt-4 text-xl">
-              Discover and deploy boilerplate example Next.js projects.
-            </p>
-          </a>
-
-          <a
-            href="https://vercel.com/import?filter=next.js&utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className="mt-6 w-96 rounded-xl border p-6 text-left hover:text-blue-600 focus:text-blue-600"
-          >
-            <h3 className="text-2xl font-bold">Deploy &rarr;</h3>
-            <p className="mt-4 text-xl">
-              Instantly deploy your Next.js site to a public URL with Vercel.
-            </p>
-          </a>
+      <NavBar
+      user={user}
+      setActiveMenuItem={setActiveMenuItem}
+      activeMenuItem={activeMenuItem}
+      selectToken={selectToken}
+      items={tokens.map((token) => ({
+              label: token.ticker,
+              value: token
+            }))}  />
+      <div className='flex flex-col w-full h-auto gap-5 my-10'>
+        <div className='flex align-middle justify-between px-5 flex-col sm:flex-row w-full'>
+          <div className='flex flex-col gap-5 w-full sm:w-4/12'>
+            <Wallet
+            activeMenuItem={activeMenuItem}
+            user={user}
+            deposit={deposit}
+            withdraw={withdraw}
+             />
+            <NewOrder
+            user={user}
+            createLimitOrder={createLimitOrder}
+            createMarketOrder={createMarketOrder}
+            />
+          </div>
+          <div className='flex flex-col gap-5 w-full sm:w-[65%] h-full'>
+            <AllTrades />
+            <AllOrders
+            orders={orders}
+            />
+            <MyOrders />
+          </div>
         </div>
-      </main>
-
-      <footer className="flex h-24 w-full items-center justify-center border-t">
-        <a
-          className="flex items-center justify-center gap-2"
-          href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Powered by{' '}
-          <Image src="/vercel.svg" alt="Vercel Logo" width={72} height={16} />
-        </a>
-      </footer>
+      </div>
     </div>
   )
 }
