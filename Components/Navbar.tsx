@@ -58,7 +58,7 @@ const NavBar: FC<NavBarProps> = ({items, selectToken, setActiveMenuItem, activeM
             exit={{top:'-100px'}}
             >
                 {items ?
-                    items.map((item:string, i:number) => (
+                    items.map((item:any, i:number) => (
                         <div key={i} className="flex justify-center items-center w-1/4 rounded-lg bg-slate-700 hover:bg-slate-600 hover:cursor-pointer duration-200 text-white font-bold" onClick={(e) => selectItem(e, item.value)}>{item.label}</div>
                         )) 
                     : <div className="text-white">Configure metamask to continue</div>}
