@@ -1,9 +1,7 @@
 import type { NextPage } from 'next'
 import Head from 'next/head'
-import Image from 'next/image'
 import React, { useEffect, useState } from 'react';
 import { getContracts, getWeb3 } from '../utils';
-import Web3 from 'web3'
 import Wallet from '../Components/Wallet';
 import NewOrder from '../Components/NewOrder';
 import AllTrades from '../Components/AllTrades';
@@ -81,7 +79,7 @@ const Home: NextPage = () => {
     const listener = contracts.dex.events.NewTrade(
       {
         filter: {ticker: web3.utils.fromAscii(token.ticker)},
-        fromBlock: 0
+        fromBlock: 10193592
       })
       .on('data', newTrade => {
         if(tradeIds.has(newTrade.returnValues.tradeId)) return;
@@ -138,7 +136,7 @@ const Home: NextPage = () => {
   }
 
   const createLimitOrder = async (amount, price, side) => {
-    console.log(user.accounts[0])
+    console.log(side)
     await contracts.dex.methods
     .createLimitOrder(
         web3.utils.fromAscii(user.selectedToken.ticker),
@@ -187,10 +185,13 @@ const Home: NextPage = () => {
         ),
         getOrders(user.selectedToken),
       ]);
+      //listenToTrades(web3.utils.fromAscii(activeMenuItem));
       listenToTrades(user.selectedToken);
       setUser(user => ({ ...user, balances}));
       setOrders(orders);
       console.log(orders)
+      console.log(trades)
+      console.log(user.selectedToken)
     }
     if(typeof user.selectedToken !== 'undefined') {
       init();
@@ -229,12 +230,25 @@ const Home: NextPage = () => {
             createMarketOrder={createMarketOrder}
             />
           </div>
-          <div className='flex flex-col gap-5 w-full sm:w-[65%] h-full'>
-            <AllTrades />
+          <div className='flex flex-col gap-5 w-full my-4 sm:my-0 sm:w-[65%] h-full'>
+            <AllTrades
+            user={user.selectedToken}
+            trades={trades}
+            />
             <AllOrders
+            contracts={contracts}
             orders={orders}
             />
-            <MyOrders />
+            <MyOrders
+            orders={{
+              buy: orders.buy.filter(
+                order => order.trader.toLowerCase() === accounts[0].toLowerCase()
+              ),
+              sell: orders.sell.filter(
+                order => order.trader.toLowerCase() === accounts[0].toLowerCase()
+              )
+            }}
+            />
           </div>
         </div>
       </div>
