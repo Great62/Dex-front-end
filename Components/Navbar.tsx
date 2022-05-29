@@ -22,16 +22,31 @@ const NavBar: FC<NavBarProps> = ({items, selectToken, setActiveMenuItem, activeM
         setMenuOpen(false)
         console.log(item)
         console.log(user.accounts)
+        console.log(user)
     }
 
     return ( 
       <div className="flex justify-center items-center relative w-full bg-slate-900 h-20">
-          <div className="flex justify-between items-center px-2 pl-4 w-32 h-12 bg-gray-800 hover:bg-slate-700 duration-200 absolute left-4 rounded-lg text-white hover:cursor-pointer" onClick={() => setMenuOpen(!menuOpen)}>
-              <div className=" font-bold ">{activeMenuItem ? activeMenuItem : 'Token'}</div>
-              <div className="flex items-center w-7 h-fit">
-              <Image src={downArrow} />
-              </div>
-          </div>
+          <AnimatePresence>
+
+            { !menuOpen && 
+                <motion.div 
+                className="flex justify-between items-center px-2 pl-4 w-32 h-12 bg-gray-800 hover:bg-slate-700 duration-200 absolute left-4 rounded-lg text-white hover:cursor-pointer" onClick={() => setMenuOpen(!menuOpen)}
+                exit={{top:'-100px'}}
+                animate={{top:'1em'}}
+                initial={{top:'-100px'}}
+                >
+                    <motion.div
+                    exit={{top:'-100px'}}
+                    animate={{top:'1em'}}
+                    initial={{top:'-100px'}}
+                    className=" font-bold ">{activeMenuItem ? activeMenuItem : 'Token'}</motion.div>
+                    <div className="flex items-center w-7 h-fit">
+                    <Image src={downArrow} />
+                    </div>
+                </motion.div>
+            }
+          </AnimatePresence>
             <AnimatePresence>
 
             {menuOpen && 
