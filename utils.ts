@@ -1,7 +1,6 @@
 import Web3 from 'web3';
 import Dex from './contracts/Dex.sol/Dex.json';
 import Dai from './contracts/ERC20s/Dai.sol/Dai.json';
-import ERC20Abi from './ERC20Abi.json';
 
 const getWeb3 = () => {
   return new Promise((resolve, reject) => {
@@ -40,7 +39,6 @@ const getWeb3 = () => {
 };
 
 const getContracts = async web3 => {
-  const networkId = await web3.eth.net.getId();
 //  const deployedNetwork = Dex.networks[networkId];
   const dex = new web3.eth.Contract(
     Dex.abi,
