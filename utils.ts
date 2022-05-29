@@ -1,5 +1,6 @@
 import Web3 from 'web3';
 import Dex from './contracts/Dex.sol/Dex.json';
+import Dai from './contracts/ERC20s/Dai.sol/Dai.json';
 import ERC20Abi from './ERC20Abi.json';
 
 const getWeb3 = () => {
@@ -28,7 +29,7 @@ const getWeb3 = () => {
       // Fallback to localhost; use dev console port by default...
       else {
         const provider = new Web3.providers.HttpProvider(
-          "http://localhost:8545"
+          "https://api.avax-test.network/ext/bc/C/rpc"
         );
         const web3 = new Web3(provider);
         console.log("No web3 instance injected, using Local web3.");
@@ -43,13 +44,13 @@ const getContracts = async web3 => {
 //  const deployedNetwork = Dex.networks[networkId];
   const dex = new web3.eth.Contract(
     Dex.abi,
-    '0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9',
+    '0x4E3eeD233E19f74b06D54AbDA2e0D60753CD7829',
   );
   const tokens = await dex.methods.getTokens().call();
   const tokenContracts = tokens.reduce((acc, token) => ({
     ...acc,
     [web3.utils.hexToUtf8(token.ticker)]: new web3.eth.Contract(
-      ERC20Abi,
+      Dai.abi,
       token.tokenAddress
     )
   }), {});
