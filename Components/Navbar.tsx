@@ -47,6 +47,7 @@ const NavBar: FC<NavBarProps> = ({items, selectToken, setActiveMenuItem, activeM
                 </motion.div>
             }
           </AnimatePresence>
+
             <AnimatePresence>
 
             {menuOpen && 
