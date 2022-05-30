@@ -26,7 +26,7 @@ const AllOrders: FC<AllOrdersProps> = ({orders, contracts}) => {
                         <div className="w-2/4">Date</div>
                     </div>
                     { orders.buy != false ? orders.buy.map((buyOrder:any, i:number) => 
-                    <div key={i} className={`flex w-full h-6 bg-gray-800 px-2 font-semibold ${i % 2 == 0 && 'bg-gray-700'}`}>
+                    <div key={i} className={`flex w-full h-6 bg-gray-800 px-2 font-semibold ${i % 2 == 0 && 'bg-gray-700'} ${i + 1 === orders.buy.length && 'rounded-b'}`}>
                         <div className="w-1/4">{buyOrder.price}</div>    
                         <div className="w-1/4">{buyOrder.amount}</div>    
                         <Moment className="w-2/4" fromNow>{parseInt(buyOrder.date) * 1000}</Moment>    
@@ -49,7 +49,7 @@ const AllOrders: FC<AllOrdersProps> = ({orders, contracts}) => {
                         <div className="w-2/4">Date</div>
                     </div>
                     { orders.sell != false ? orders.sell.map((sellOrder:any, i:number) => 
-                    <div key={i} className={`flex w-full h-6 bg-gray-800 px-2 font-semibold ${i % 2 == 0 && 'bg-gray-700'} ${i + 1 == orders.sell.lenth && 'rounded-b'}`} onClick={() => console.log(orders.sell['lenth'])}>
+                    <div key={i} className={`flex w-full h-6 bg-gray-800 px-2 font-semibold ${i % 2 == 0 && 'bg-gray-700'} ${i + 1 == orders.sell.lenth && 'rounded-b'} ${i + 1 === orders.sell.length && 'rounded-b'}`}>
                         <div className="w-1/4">{sellOrder.price}</div>    
                         <div className="w-1/4">{sellOrder.amount}</div>    
                         <Moment className="w-2/4" fromNow>{parseInt(sellOrder.date) * 1000}</Moment>    

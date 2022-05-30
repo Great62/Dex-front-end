@@ -16,7 +16,7 @@ const MyOrders: FC<MyOrdersProps> = ({orders}) => {
                         <div className="w-2/4 text-white">Date</div>
                     </div>
             { orders.buy != false ? orders.buy.map((buyOrder:any, i:number) => 
-                    <div key={i} className={`flex w-full h-6 bg-gray-800 text-white px-2 font-semibold ${i % 2 == 0 && 'bg-gray-700'}`}>
+                    <div key={i} className={`flex w-full h-6 bg-gray-800 text-white px-2 font-semibold ${i % 2 == 0 && 'bg-gray-700'} ${i + 1 === orders.buy.length && 'rounded-b'}`}>
                         <div className="w-1/4">{buyOrder.amount}</div>    
                         <div className="w-1/4">{buyOrder.price}</div>    
                         <Moment className="w-2/4" fromNow>{parseInt(buyOrder.date) * 1000}</Moment>    

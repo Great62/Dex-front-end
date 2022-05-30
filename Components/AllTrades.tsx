@@ -38,7 +38,7 @@ const AllTrades: FC<AllTradesProps> = ({trades, user}) => {
                             <div className="w-2/4">Date</div>
                         </div>
                     { trades != false ? trades.map((trade:any, i:number) => 
-                        <div key={i} className={`flex w-full h-6 bg-gray-800 text-white px-2 font-semibold ${i % 2 == 0 && 'bg-gray-700'}`}>
+                        <div key={i} className={`flex w-full h-6 bg-gray-800 text-white px-2 font-semibold ${i % 2 == 0 && 'bg-gray-700'} ${i + 1 === trades.length && 'rounded-b'}`}>
                             <div className="w-1/4">{trade.amount}</div>    
                             <div className="w-1/4">{trade.price}</div>    
                             <Moment className="w-2/4" fromNow>{parseInt(trade.date) * 1000}</Moment>    
