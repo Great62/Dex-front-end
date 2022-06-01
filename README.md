@@ -1,6 +1,6 @@
 # About The Project
 
-![image](https://user-images.githubusercontent.com/38594331/171441081-c33950e0-eb85-48eb-b621-c13b0d4a3c2e.png)
+![image](https://user-images.githubusercontent.com/38594331/171493718-4c181da1-df5f-4299-8995-5aa216ac6830.png)
 
 **Development of a full stack decentralized web app for trading enabling users to trade tokens and analyse gains in their decentralized wallet.**
 
